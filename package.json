@@ -1,0 +1,9 @@
+{
+  "name": "bitefound",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Modern restaurant search UI powered by a Yelp proxy.",
+  "scripts": {
+    "start": "node -e \"console.log('Frontend-only setup. Open index.html in your browser.')\""
+  }
+}
