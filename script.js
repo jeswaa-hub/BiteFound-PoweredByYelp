@@ -91,6 +91,8 @@ function renderLoadingSkeletons(count = 6) {
 function formatBusiness(business) {
   const latitude = business.coordinates?.latitude;
   const longitude = business.coordinates?.longitude;
+  const city = business.location?.city || "";
+  const distanceMeters = business.distance;
 
   return {
     name: business.name || "Restaurant",
@@ -103,6 +105,8 @@ function formatBusiness(business) {
     location: Array.isArray(business.location?.display_address)
       ? business.location.display_address.join(", ")
       : business.location?.address1 || "Address unavailable",
+    city,
+    distanceMeters: Number.isFinite(distanceMeters) ? distanceMeters : null,
     area: business.location?.neighborhoods?.join(", ") || business.location?.city || "",
     categories: Array.isArray(business.categories)
       ? business.categories.map((category) => category.title)
@@ -114,6 +118,10 @@ function formatBusiness(business) {
       }
       : null,
   };
+}
+
+function normalizeText(value) {
+  return String(value || "").trim().toLowerCase();
 }
 
 function updateFeaturedRestaurant(restaurant) {
@@ -276,6 +284,7 @@ async function searchRestaurants(city) {
     categories: "restaurants",
     sort_by: "best_match",
     limit: "24",
+    radius: "8047",
   });
 
   let response;
@@ -301,7 +310,17 @@ async function searchRestaurants(city) {
     throw new Error(message);
   }
 
-  return Array.isArray(payload?.businesses) ? payload.businesses.map(formatBusiness) : [];
+  const restaurants = Array.isArray(payload?.businesses) ? payload.businesses.map(formatBusiness) : [];
+  const normalizedCity = normalizeText(city);
+
+  return restaurants.filter((restaurant) => {
+    const inRadius = typeof restaurant.distanceMeters === "number"
+      ? restaurant.distanceMeters <= 8047
+      : false;
+
+    const sameCity = normalizeText(restaurant.city) === normalizedCity;
+    return inRadius || sameCity;
+  });
 }
 
 form.addEventListener("submit", async (event) => {
